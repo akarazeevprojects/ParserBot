@@ -69,12 +69,13 @@ def announce():
             to_announce = news_list[0]
             text = utils.compose_announcement(to_announce)
             # Make announcement.
-            bot.send_message(chat_id=channel_id, text=text, parse_mode=telegram.ParseMode.MARKDOWN)
+            bot.send_message(chat_id=channel_id, text=text, parse_mode=telegram.ParseMode.MARKDOWN, timeout=9999)
             # Save updated news.
             loaded_news.append(to_announce)
             utils.save_news(loaded_news)
             print('-> done')
         except telegram.error.TimedOut as e:
+            print('-> skipping this event due to Timed Out')
             print(e)
 
 
