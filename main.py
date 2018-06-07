@@ -1,5 +1,8 @@
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from emoji import emojize
 import numpy as np
+import os
+import pickle
 import threading
 import argparse
 import telegram
@@ -8,7 +11,6 @@ import logging
 import utils
 import json
 import time
-from emoji import emojize
 
 # sys.argv = ['--proxy 1']
 
