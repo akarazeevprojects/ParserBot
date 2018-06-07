@@ -10,7 +10,12 @@ import json
 import time
 from emoji import emojize
 
-sys.argv = ['--proxy 1']
+# sys.argv = ['--proxy 1']
+
+if os.path.exists(utils.PKL) is False:
+        data = list()
+        with open(utils.PKL, 'wb') as f:
+            pickle.dump(data, f)
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - \
