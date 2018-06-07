@@ -77,6 +77,8 @@ def announce():
         except telegram.error.TimedOut as e:
             print('-> skipping this event due to Timed Out')
             print(e)
+    else:
+        print('-> nothing new :(')
 
 
 def help(bot, update):
