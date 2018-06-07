@@ -40,10 +40,12 @@ class Looper(threading.Thread):
     def stop(self):
         self.stop_event.set()
 
+
 bot = None
 info_text = 'NOT IMPLEMENTED'
 fpmi_url = 'https://mipt.ru/education/departments/fpmi/'
 channel_id = -1001180214136  # FPMI_announcements.
+
 
 def announce():
     news_list = utils.get_info(fpmi_url)
@@ -62,13 +64,18 @@ def announce():
     # If there is at least one fresh announcement -- post it.
     if len(news_list) > 0:
         print('-> announce')
-        to_announce = news_list[0]
-        loaded_news.append(to_announce)
-        utils.save_news(loaded_news)
 
-        text = utils.compose_announcement(to_announce)
-
-        bot.send_message(chat_id=channel_id, text=text, parse_mode=telegram.ParseMode.MARKDOWN)
+        try:
+            to_announce = news_list[0]
+            text = utils.compose_announcement(to_announce)
+            # Make announcement.
+            bot.send_message(chat_id=channel_id, text=text, parse_mode=telegram.ParseMode.MARKDOWN)
+            # Save updated news.
+            loaded_news.append(to_announce)
+            utils.save_news(loaded_news)
+            print('-> done')
+        except telegram.error.TimedOut as e:
+            print(e)
 
 
 def help(bot, update):
