@@ -84,13 +84,13 @@ def help(bot, update):
 
 
 announcer = Looper(announce, pause=pause)  # Seconds.
+
+
 def main():
     global bot
     token = utils.get_token('res/token.json')
 
     args = parser.parse_args()
-    print(args.proxy)
-    print(type(args.proxy))
     if args.proxy == 1:
         print('-> USE PROXY')
         req = telegram.utils.request.Request(proxy_url='socks5://127.0.0.1:9050',
