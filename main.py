@@ -71,12 +71,12 @@ def announce():
 
     # If there is at least one fresh announcement -- post it.
     if len(news_list) > 0:
+        print('-> announce')
         to_announce = news_list[0]
         loaded_news.append(to_announce)
         utils.save_news(loaded_news)
 
         text = utils.compose_announcement(to_announce)
-        print(text)
 
         bot.send_message(chat_id=channel_id, text=text, parse_mode=telegram.ParseMode.MARKDOWN)
 
