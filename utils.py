@@ -1,14 +1,32 @@
 from datetime import datetime as dt
 from bs4 import BeautifulSoup
 from emoji import emojize
+import threading
 import requests
 import pickle
+import time
 import json
 import os
 
 
 weekdays_mapping = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье']
 PKL = 'data/real_data.pkl'
+
+
+class Looper(threading.Thread):
+    def __init__(self, loop_func, pause=5):
+        super(Looper, self).__init__()
+        self.stop_event = threading.Event()
+        self.loop_func = loop_func
+        self.pause = pause
+
+    def run(self):
+        while not self.stop_event.is_set():
+            self.loop_func()
+            time.sleep(self.pause)
+
+    def stop(self):
+        self.stop_event.set()
 
 
 def save_news(data):
@@ -85,3 +103,13 @@ def get_info(url, verbose=False):
             print('---')
 
     return res
+
+
+def get_titles(news_list):
+    titles = list(map(lambda x: x['title'], news_list))
+    return titles
+
+
+def get_sorted(news_list):
+    news_sorted = sorted(news_list, key=lambda x: x['timestamp'])
+    return news_sorted

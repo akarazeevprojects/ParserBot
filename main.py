@@ -1,18 +1,22 @@
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-import numpy as np
-import threading
 import argparse
 import telegram
 import sys
 import os
 import pickle
 import utils
-import json
-import time
-from emoji import emojize
 
-# sys.argv = ['--proxy 1']
-pause = 10.0
+sys.argv = ['--proxy 1']
+parser = argparse.ArgumentParser(description="Bot to parse news from FPMI's site")
+parser.add_argument('--proxy', dest='proxy', type=int,
+                    default=1, help='use proxy or not')
+
+bot = None
+info_text = 'NOT IMPLEMENTED'
+fpmi_url = 'https://mipt.ru/education/departments/fpmi/'
+channel_id = -1001180214136  # FPMI_announcements.
+pause = 60.0
+
 
 if os.path.exists(utils.PKL) is False:
     data = list()
@@ -20,73 +24,46 @@ if os.path.exists(utils.PKL) is False:
         pickle.dump(data, f)
 
 
-parser = argparse.ArgumentParser(description="Bot to parse news from FPMI's site")
-parser.add_argument('--proxy', dest='proxy', type=int,
-                    default=1, help='use proxy or not')
-
-
-class Looper(threading.Thread):
-    def __init__(self, loop_func, pause=5):
-        super(Looper, self).__init__()
-        self.stop_event = threading.Event()
-        self.loop_func = loop_func
-        self.pause = pause
-
-    def run(self):
-        while not self.stop_event.is_set():
-            self.loop_func()
-            time.sleep(self.pause)
-
-    def stop(self):
-        self.stop_event.set()
-
-
-bot = None
-info_text = 'NOT IMPLEMENTED'
-fpmi_url = 'https://mipt.ru/education/departments/fpmi/'
-channel_id = -1001180214136  # FPMI_announcements.
-
-
 def announce():
-    news_list = utils.get_info(fpmi_url)
-
-    news = news_list[np.random.randint(len(news_list))]
-
     # Get all news from site.
     fresh_news = utils.get_info(fpmi_url)
     # Load dumped news from .pkl file.
     loaded_news = utils.load_news()
-
     # Find difference between fresh and dumped news.
     news_list = utils.diff_news(fresh_news, loaded_news)
-    news_list = sorted(news_list, key=lambda x: x['timestamp'])
+
+    news_list = utils.get_sorted(news_list)
 
     # If there is at least one fresh announcement -- post it.
-    if len(news_list) > 0:
+    if len(news_list) == 0:
+        print('-> nothing new :(')
+    else:
         print('-> announce')
-
+        to_announce = news_list[0]
         try:
-            to_announce = news_list[0]
-            text = utils.compose_announcement(to_announce)
-            # Make announcement.
-            bot.send_message(chat_id=channel_id, text=text, parse_mode=telegram.ParseMode.MARKDOWN, timeout=9999)
-            # Save updated news.
-            loaded_news.append(to_announce)
-            utils.save_news(loaded_news)
-            print('-> done')
+            if to_announce not in loaded_news:
+                text = utils.compose_announcement(to_announce)
+                # Make announcement.
+                bot.send_message(chat_id=channel_id, text=text, parse_mode=telegram.ParseMode.MARKDOWN, timeout=9999)
+                # Save updated news.
+
+                loaded_news.append(to_announce)
+                print('-> appended')
+                utils.save_news(loaded_news)
+                print('-> done')
+            else:
+                print('-> duplicate :(')
         except telegram.error.TimedOut as e:
             print('-> skipping this event due to Timed Out')
             print(e)
-    else:
-        print('-> nothing new :(')
+
+
+announcer = utils.Looper(announce, pause=pause)  # `pause` == seconds.
 
 
 def help(bot, update):
     update.message.reply_text(info_text)
     return
-
-
-announcer = Looper(announce, pause=pause)  # Seconds.
 
 
 def main():
@@ -96,7 +73,7 @@ def main():
     args = parser.parse_args()
     if args.proxy == 1:
         print('-> USE PROXY')
-        req = telegram.utils.request.Request(proxy_url='socks5://127.0.0.1:9050',
+        req = telegram.utils.request.Request(proxy_url='socks5h://127.0.0.1:9050',
                                              read_timeout=30, connect_timeout=20,
                                              con_pool_size=10)
         bot = telegram.Bot(token=token, request=req)
@@ -107,6 +84,7 @@ def main():
         raise ValueError('Wrong proxy.')
 
     announcer.start()
+
     updater = Updater(bot=bot)
     dp = updater.dispatcher
 
